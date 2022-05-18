@@ -72,6 +72,7 @@ class AccountControllerTest {
 
     /**
      * 스프링 시큐리티에서 로그인 성공, 실패를 테스트하는 방법
+     * 데이터베이스와 연관된 테스트에서는 @Transactional 을 선언해 테스트가 독립적일 수 있도록 작성
      */
     //user.getPassword() 같이 가져오면 암호화 된 값이 바로 가져와져 인증에 실패한다.
     @Test
