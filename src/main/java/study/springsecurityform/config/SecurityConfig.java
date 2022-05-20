@@ -14,10 +14,14 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.FilterInvocation;
 import org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler;
 import org.springframework.security.web.access.expression.WebExpressionVoter;
+import org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter;
+import study.springsecurityform.common.LoggingFilter;
 
 import java.util.Arrays;
 import java.util.List;
@@ -45,6 +49,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+        //커스텀 필터 추가
+        http.addFilterBefore(new LoggingFilter(), WebAsyncManagerIntegrationFilter.class);
+
         http
                 .antMatcher("/**")
                 .authorizeRequests()
@@ -54,26 +61,28 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                 .anyRequest().authenticated()
                 .expressionHandler(expressionHandler());
-        http.formLogin();
+        //로그인, 로그아웃 페이지 커스텀
+        http.formLogin()
+                .permitAll();
         http.httpBasic();
 
-        /**
-         * Async 설정 - 쓰레드가 다를 때도 SecurityContext 를 자식 쓰레드에도 공유하는 전략
-         */
+        //Async 설정 - 쓰레드가 다를 때도 SecurityContext 를 자식 쓰레드에도 공유하는 전략
         SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
-
-        //csrf 필터 사용 해제
-//        http.csrf().disable();
 
         //로그아웃 필터 설정
         http.logout()
                 .logoutSuccessUrl("/");
-//                .logoutUrl("/logout")
-//                .logoutRequestMatcher()
-//                .invalidateHttpSession(true)
-//                .deleteCookies()
-//                .addLogoutHandler()
-//                .logoutSuccessHandler();
 
+        SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
+
+        //ExceptionHandler 설정
+        http.exceptionHandling()
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+                    String username = principal.getUsername();
+                    String servletPath = request.getServletPath();
+                    System.out.println(username + " is denied to access to " + servletPath);
+                    response.sendRedirect("/access-denied");
+                });
     }
 }
