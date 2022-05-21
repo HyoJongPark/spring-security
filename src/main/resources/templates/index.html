@@ -1,10 +1,21 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<!--sec 네임 스페이스 사용을 위한 등록-->
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
 </head>
 <body>
     <h1 th:text="${message}">index</h1>
+    <!-- 타임리프 스프링 시큐리티 확장팩 사용 : sec 네임 스페이스 -->
+    <div sec:authorize-expr="isAuthenticated()">
+        <h2 sec:authentication="name">Name</h2>x
+        <a href="/logout" th:href="@{/logout}">Logout</a>
+    </div>
+    <!-- 타임리프 스프링 시큐리티 확장팩 사용 : 일반적인 문법 -->
+    <div th:unless="${#authorization.expr('isAuthenticated()')}">
+        <a href="login" th:href="@{/login}">Login</a>
+    </div>
 </body>
 </html>
